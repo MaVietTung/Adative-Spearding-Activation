@@ -19,12 +19,12 @@ def RMS(item_i, rating_x, rating_y):
     total = 0
     for user_s in R_x_i:
         for user_t in R_y_i:
-            total += function.getSmilaritiesValue(user_s, user_t, matrix_smilarities)
+            total += function.getSimilaritiesValue(user_s, user_t, matrix_smilarities)
     result = total * w
     return result
 
 
-def caculate(user_a, user_i):
+def calculate(user_a, user_i):
     smilarities = 0
     len_item = 0
     for item in user_book_rating[user_a].keys():
@@ -50,7 +50,7 @@ if (progess != 0) | (epochs != 0):
 total_progess=len(matrix_smilarities.keys())
 active_list = list(matrix_smilarities.keys())
 for epoch in range(4 - epochs):
-    rint('epoch: ', epoch)
+    print('epoch: ', epoch)
     for active_user in active_list[progess:-1]:
         progess += 1
         print(progess, '/' ,total_progess)
@@ -63,7 +63,7 @@ for epoch in range(4 - epochs):
             print('saved\n')
         for user_i in matrix_smilarities[active_user].keys():
             if active_user != user_i:
-                t = caculate(active_user, user_i)
+                t = calculate(active_user, user_i)
                 if t != 0:
                     matrix_smilarities[active_user][user_i] = t
 

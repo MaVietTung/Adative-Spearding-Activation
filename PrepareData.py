@@ -7,7 +7,7 @@ book_user = {}
 book_rate = {}
 database = 'database/BX-Book-Ratings.csv'
 data = csv.reader(open(database))
-
+user_book_with_no_rating_0={}
 for row in data:
     string = row[0].split(';')
     if (string[0] != '\ufeffUser-ID') & (len(string) == 3):
@@ -29,7 +29,14 @@ for row in data:
         else:
             a = {string[2]: [string[0]]}
             book_rate[string[1]] = a
+        if string[2] != '0':
+            if user_book_with_no_rating_0.__contains__(string[0]):
+                user_book_with_no_rating_0[string[0]][string[1]]=string[2]
+            else:
+                a={string[1]:string[2]}
+                user_book_with_no_rating_0[string[0]]=a
 similarities_matrix = {}
+
 for x in user_book.keys():
     a = {}
     similarities_matrix[x] = a
@@ -38,9 +45,11 @@ for x in user_book.keys():
         for z in book_user[y].keys():
             if not similarities_matrix.__contains__(z):
                 similarities_matrix[x][z] = random.random()
+
 with open('data_matrix_smilarities/progess.txt') as out_progess:
     out_progess.write('0\n')
     out_progess.write('0\n')
+
 with open('data_matrix_smilarities/matrix_smilarities.json', 'w') as out_data:
     json.dump(similarities_matrix, out_data)
 with open('data_matrix_smilarities/user_book_rating.json', 'w') as out_data:
@@ -49,3 +58,6 @@ with open('data_matrix_smilarities/book_user_rating.json', 'w') as out_data:
     json.dump(book_user, out_data)
 with open('data_matrix_smilarities/book_rate_user.json', 'w') as out_data:
     json.dump(book_rate, out_data)
+
+with open('data_matrix_smilarities/user_book_with_no_rating_0.json','w') as out_data:
+    json.dump(user_book_with_no_rating_0,out_data)
