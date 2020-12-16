@@ -28,7 +28,7 @@ class RouterHandler(object):
             "time": str(end - start)
         })
 
-    async def evaluation(self, request):
+    async def evaluate(self, request):
         body = await decode_request(request)
         able_fields = ['metric', 'loss']
         body = filter_fields(able_fields, body)
@@ -67,7 +67,7 @@ class RouterHandler(object):
 
         return json_response(results)
 
-    async def prediction(self, request):
+    async def recommend(self, request):
         body = await decode_request(request)
         required_fields = ['user']
         validate_fields(required_fields, body)
@@ -79,10 +79,13 @@ class RouterHandler(object):
         end = datetime.now()
         time = end - start
 
-        if predicted:
+        print(predicted, '\n')
+
+        if not predicted:
             return json_response({
                 "status": "Fail",
-                "detail": "Image not found"
+                "detail": "User is cold start",
+                "time": time.total_seconds()
             })
 
         return json_response({
@@ -108,7 +111,7 @@ class RouterHandler(object):
                 "status": "Fail"
             })
 
-    async def predict_rate(self, request):
+    async def predict(self, request):
         body = await decode_request(request)
         required_fields = ['user', 'book']
         validate_fields(required_fields, body)
@@ -121,10 +124,10 @@ class RouterHandler(object):
         end = datetime.now()
         time = end - start
 
-        if rate:
+        if not rate:
             return json_response({
                 "status": "Fail",
-                "detail": "Image not found",
+                "detail": "Can't predict",
                 "time": time.total_seconds()
             })
 

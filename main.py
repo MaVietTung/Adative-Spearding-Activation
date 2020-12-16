@@ -21,9 +21,9 @@ def start_server(host, port):
     handler = RouterHandler(_loop)
 
     app.router.add_get('/train', handler.train)
-    app.router.add_post('/evaluation', handler.evaluation)
-    app.router.add_post('/prediction', handler.prediction)
-    app.router.add_post('/predict', handler.predict_rate)
+    app.router.add_post('/evaluate', handler.evaluate)
+    app.router.add_post('/recommend', handler.recommend)
+    app.router.add_post('/predict', handler.predict)
     app.router.add_get('/prepare', handler.prepare)
 
     LOGGER.info('Starting Server on %s:%s', host, port)

@@ -99,7 +99,7 @@ class Recommender:
         with open('data_matrix_similarities/result_train_similarities.json', 'w') as fout:
             json.dump(self.matrix_similarities, fout)
 
-    def predict_rate(self, user, book):
+    def predict_rate(self, user, book, enable_print=True):
         predict = None
         if self.user_book_rating.__contains__(user):
             user_rates = self.user_book_rating[user]
@@ -115,12 +115,16 @@ class Recommender:
                             w = self.functions.getSimilaritiesValue(user, user_i)
                             S += (int(rate) - self.functions.getMediumRating(user_i)) * w
                             K += w
-                            # print('{user}: {rate}, {avg_rate} - {similarity}'.format(user=user_i, rate=rate, avg_rate=self.functions.getMediumRating(user_i), similarity=w))
+                            if enable_print:
+                                print('{user}: {rate}, {avg_rate} - {similarity}'.format(user=user_i, rate=rate, avg_rate=self.functions.getMediumRating(user_i), similarity=w))
                 if K != 0:
                     predict = medium_rating_user + 1 / K * S
+        elif enable_print:
+            print("User is incorrect. Please Enter another user ID. ")
+
         return predict
 
-    def prediction(self, user, n_pred=20):
+    def prediction(self, user, n_pred=20, enable_print=True):
         book_recommendation = []
 
         if self.user_book_rating.__contains__(user):
@@ -128,17 +132,19 @@ class Recommender:
             # print("User avg rating: ", medium_rating)
 
             if medium_rating == 0:
-                # print("User does not have any explicit ratings.")
+                if enable_print:
+                    print("User does not have any explicit ratings.")
                 book_recommendation = self.functions.getHighRateBook()
 
             else:
                 book_candidate = self.functions.getBookCandidate(user)
-                # print("Book Candidate: ", len(book_candidate))
+                if enable_print:
+                    print("Book Candidate: ", len(book_candidate))
 
                 dict_book_predict = {}
-                for book in book_candidate:
+                for book in tqdm(book_candidate):
                     if self.book_rate_user.__contains__(book):
-                        p = self.predict_rate(user, book)
+                        p = self.predict_rate(user, book, enable_print=False)
                         if p is not None:
                             dict_book_predict[book] = p
 
@@ -153,8 +159,8 @@ class Recommender:
                 else:
                     book_recommendation = lst
 
-        # else:
-        #     print("User is incorrect. Please Enter another user ID. ")
+        elif enable_print:
+            print("User is incorrect. Please Enter another user ID. ")
 
         return book_recommendation
 
@@ -163,7 +169,7 @@ class Recommender:
         mae = 0
         mse = 0
         for row in tqdm(test_set):
-            pred = self.predict_rate(row[0], row[1])
+            pred = self.predict_rate(row[0], row[1], enable_print=False)
             if pred is not None:
                 cnt += 1
                 delta = int(row[2]) - pred
@@ -187,7 +193,7 @@ class Recommender:
             # ground_truth[user].sort(key=lambda x: x[1])
             labels = [book for book, _ in ground_truth[user]]
 
-            preds = self.prediction(user, n_pred=10)
+            preds = self.prediction(user, n_pred=10, enable_print=False)
             preds = [book for book, _ in preds]
 
             if mode == 'f1_score':

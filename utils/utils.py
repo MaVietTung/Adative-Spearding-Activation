@@ -1,5 +1,5 @@
 
-def f1_score(labels, preds):
+def precision_recall(labels, preds):
     tp = 0
     for label in labels:
         if preds.__contains__(label):
@@ -10,6 +10,11 @@ def f1_score(labels, preds):
 
     recall = tp / len(labels)
     precision = tp / len(preds)
+    return precision, recall
+
+
+def f1_score(labels, preds):
+    precision, recall = precision_recall(labels, preds)
 
     f1 = 2 * recall * precision / (recall + precision)
     return f1

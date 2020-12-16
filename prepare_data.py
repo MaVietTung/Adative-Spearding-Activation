@@ -82,10 +82,10 @@ def prepare_data(data_path):
         json.dump(user_book_with_no_rating_0, out_data)
 
 
-paths = [BX_path, GB_path]
-for path in paths:
-    ratings = pd.read_csv(os.path.join(path, 'ratings.csv'), sep=';')
-    split_train_test(ratings, path)
-
-    train_path = os.path.join(path, 'train.csv')
-    prepare_data(train_path)
+# paths = [BX_path, GB_path]
+# for path in paths:
+#     ratings = pd.read_csv(os.path.join(path, 'ratings.csv'), sep=';')
+#     split_train_test(ratings, path)
+#
+#     train_path = os.path.join(path, 'train.csv')
+#     prepare_data(train_path)
