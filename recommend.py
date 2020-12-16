@@ -1,20 +1,37 @@
+import os
 import math
 import json
 import collections
 
-from tqdm import notebook
+from tqdm import notebook, tqdm
 
 from utils.functions import Function
 from utils.utils import f1_score, rankscore, avg_precision
+from config import *
 
 
 class Recommender:
-    def __init__(self, user_book_rating, book_rate_user, matrix_similarities, book_user_rate):
-        self.user_book_rating = user_book_rating
-        self.book_rate_user = book_rate_user
-        self.book_user_rate = book_user_rate
-        self.matrix_similarities = matrix_similarities
-        self.functions = Function(user_book_rating, book_rate_user, matrix_similarities, book_user_rate)
+    def __init__(self, path, is_trained=True):
+        with open(os.path.join(path, 'user_book_rating.json')) as fin:
+            self.user_book_rating = json.load(fin)
+
+        with open(os.path.join(path, 'book_rate_user.json')) as fin:
+            self.book_rate_user = json.load(fin)
+
+        with open(os.path.join(path, 'book_user_rating.json')) as fin:
+            self.book_user_rate = json.load(fin)
+
+        if is_trained:
+            with open(os.path.join(path, 'result_train_similarities.json')) as fin:
+                self.matrix_similarities = json.load(fin)
+        else:
+            with open(os.path.join(path, 'matrix_similarities.json')) as fin:
+                self.matrix_similarities = json.load(fin)
+
+        self.functions = Function(self.user_book_rating, self.book_rate_user, self.matrix_similarities, self.book_user_rate)
+
+        self.epochs = epochs
+        self.n_preds = n_preds
 
     def RMS(self, item_i, rating_x, rating_y):
         R_x_i = self.book_rate_user[item_i][rating_x]
@@ -42,7 +59,7 @@ class Recommender:
         else:
             return 0
 
-    def train(self, epochs=2):
+    def train(self):
         print('============= Training RSM =============')
 
         # with open('data_matrix_similarities/progress.txt', 'r') as fin:
@@ -59,9 +76,9 @@ class Recommender:
         # total_progress = len(self.matrix_similarities.keys())
         active_list = list(self.matrix_similarities.keys())
 
-        for epoch in range(epochs):
-            print('Epoch: ', epoch + 1)
-            for active_user in notebook.tqdm(active_list):
+        for epoch in range(self.epochs):
+            print('Epoch: {:} / {:}'.format(epoch + 1, self.epochs + 1))
+            for active_user in tqdm(active_list):
                 # progress += 1
                 # print(progress, '/', total_progress)
 
@@ -145,7 +162,7 @@ class Recommender:
         cnt = 0
         mae = 0
         mse = 0
-        for row in test_set:
+        for row in tqdm(test_set):
             pred = self.predict_rate(row[0], row[1])
             if pred is not None:
                 cnt += 1
@@ -166,7 +183,7 @@ class Recommender:
             ground_truth[user].append([row[1], int(row[2])])
 
         f1, ranks, ap = 0, 0, 0
-        for user in ground_truth:
+        for user in tqdm(ground_truth):
             # ground_truth[user].sort(key=lambda x: x[1])
             labels = [book for book, _ in ground_truth[user]]
 
@@ -183,6 +200,14 @@ class Recommender:
                 f1 += f1_score(labels, preds)
                 ranks += rankscore(labels, preds)
                 ap += avg_precision(labels, preds)
+
+        if mode == 'f1_score':
+            return f1 / len(ground_truth)
+
+        elif mode == 'rankscore':
+            return ranks / len(ground_truth)
+        elif mode == 'avg_precision':
+            return ap / len(ground_truth)
 
         f1 = f1 / len(ground_truth)
         ranks = ranks / len(ground_truth)
