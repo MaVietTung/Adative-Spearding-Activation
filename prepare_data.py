@@ -1,4 +1,3 @@
-import os
 import csv
 import json
 import random
@@ -64,21 +63,22 @@ def prepare_data(data_path):
             for z in book_user[y].keys():
                 if not similarities_matrix.__contains__(z):
                     similarities_matrix[x][z] = random.random()
-
-    with open(os.path.join(GB_similarities, 'progress.txt'), 'w') as out_progress:
+    
+    similarities_path = os.path.join(os.path.dirname(data_path), 'data_matrix_similarities')
+    with open(os.path.join(similarities_path, 'progress.txt'), 'w') as out_progress:
         out_progress.write('0\n')
         out_progress.write('0\n')
 
-    with open(os.path.join(GB_similarities, 'matrix_similarities.json'), 'w') as out_data:
+    with open(os.path.join(similarities_path, 'matrix_similarities.json'), 'w') as out_data:
         json.dump(similarities_matrix, out_data)
-    with open(os.path.join(GB_similarities, 'user_book_rating.json'), 'w') as out_data:
+    with open(os.path.join(similarities_path, 'user_book_rating.json'), 'w') as out_data:
         json.dump(user_book, out_data)
-    with open(os.path.join(GB_similarities, 'book_user_rating.json'), 'w') as out_data:
+    with open(os.path.join(similarities_path, 'book_user_rating.json'), 'w') as out_data:
         json.dump(book_user, out_data)
-    with open(os.path.join(GB_similarities, 'book_rate_user.json'), 'w') as out_data:
+    with open(os.path.join(similarities_path, 'book_rate_user.json'), 'w') as out_data:
         json.dump(book_rate, out_data)
 
-    with open(os.path.join(GB_similarities, 'user_book_with_no_rating_0.json'), 'w') as out_data:
+    with open(os.path.join(similarities_path, 'user_book_with_no_rating_0.json'), 'w') as out_data:
         json.dump(user_book_with_no_rating_0, out_data)
 
 

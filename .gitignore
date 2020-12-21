@@ -1,3 +1,9 @@
 **/__pycache__/
 **/.idea/
-data/
+
+data/BX/data_matrix_similarities/
+data/BX/ratings.csv
+
+data/GB/data_matrix_similarities/
+data/GB/ratings.csv
+data/GB/ratings_origin.csv

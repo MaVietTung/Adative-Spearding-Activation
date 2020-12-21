@@ -14,10 +14,11 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(m
 
 
 class RouterHandler(object):
-    def __init__(self, loop):
+    def __init__(self, loop, path):
         self._loop = loop
-        self.path = BX_path
-        self.recommender = Recommender(BX_similarities)
+        self.path = path
+        similarities_path = os.path.join(path, 'data_matrix_similarities')
+        self.recommender = Recommender(similarities_path)
 
     async def train(self, request):
         start = datetime.now()
@@ -94,23 +95,6 @@ class RouterHandler(object):
             "time": time.total_seconds()
         })
 
-    async def prepare(self, request):
-        try:
-            ratings = pd.read_csv(os.path.join(self.path, 'ratings.csv'), sep=';')
-            split_train_test(ratings, self.path)
-
-            train_path = os.path.join(self.path, 'train.csv')
-            prepare_data(train_path)
-
-            return json_response({
-                "status": 'Success'
-            })
-        except Exception as err:
-            logging.exception(err)
-            return json_response({
-                "status": "Fail"
-            })
-
     async def predict(self, request):
         body = await decode_request(request)
         required_fields = ['user', 'book']
@@ -124,6 +108,8 @@ class RouterHandler(object):
         end = datetime.now()
         time = end - start
 
+        print("Rate: ", rate)
+
         if not rate:
             return json_response({
                 "status": "Fail",
@@ -136,6 +122,23 @@ class RouterHandler(object):
             "predicted": rate,
             "time": time.total_seconds()
         })
+
+    async def prepare(self, request):
+        try:
+            # ratings = pd.read_csv(os.path.join(self.path, 'ratings.csv'), sep=';')
+            # split_train_test(ratings, self.path)
+
+            train_path = os.path.join(self.path, 'train.csv')
+            prepare_data(train_path)
+
+            return json_response({
+                "status": 'Success'
+            })
+        except Exception as err:
+            logging.exception(err)
+            return json_response({
+                "status": "Fail"
+            })
 
 
 async def decode_request(request):

@@ -51,8 +51,7 @@ class Recommender:
         for item in self.user_book_rating[user_a].keys():
             if self.user_book_rating[user_i].__contains__(item):
                 if self.user_book_rating[user_a][item] != self.user_book_rating[user_i][item]:
-                    similarities += self.RMS(item, self.user_book_rating[user_a][item],
-                                             self.user_book_rating[user_i][item])
+                    similarities += self.RMS(item, self.user_book_rating[user_a][item], self.user_book_rating[user_i][item])
                     len_item += 1
         if len_item != 0:
             return similarities / len_item
@@ -99,26 +98,39 @@ class Recommender:
         with open('data_matrix_similarities/result_train_similarities.json', 'w') as fout:
             json.dump(self.matrix_similarities, fout)
 
-    def predict_rate(self, user, book, enable_print=True):
+    def predict_rate(self, user, book, enable_print=True, threshold=0.3, cnt_threshold=2):
         predict = None
         if self.user_book_rating.__contains__(user):
             user_rates = self.user_book_rating[user]
             if user_rates.__contains__(book):
+                if enable_print:
+                    print("User has already rated this book. ")
                 return int(user_rates[book])
             medium_rating_user = self.functions.getMediumRating(user)
             if self.book_rate_user.__contains__(book):
                 K = 0
                 S = 0
+                cnt = 0
                 for rate in self.book_rate_user[book]:
                     if rate != '0':
                         for user_i in self.book_rate_user[book][rate]:
                             w = self.functions.getSimilaritiesValue(user, user_i)
+
+                            # Only consider users with similarity greater than a threshold
+                            if w < threshold:
+                                continue
+
                             S += (int(rate) - self.functions.getMediumRating(user_i)) * w
                             K += w
+                            cnt += 1
+
                             if enable_print:
-                                print('{user}: {rate}, {avg_rate} - {similarity}'.format(user=user_i, rate=rate, avg_rate=self.functions.getMediumRating(user_i), similarity=w))
-                if K != 0:
+                                print('{user}:\t{rate},\t{avg_rate} - {similarity}'.format(user=user_i, rate=rate, avg_rate=round(self.functions.getMediumRating(user_i), 2), similarity=w))
+
+                if K != 0 and cnt > cnt_threshold:
                     predict = medium_rating_user + 1 / K * S
+                    if predict > 10:
+                        predict = 10
         elif enable_print:
             print("User is incorrect. Please Enter another user ID. ")
 
@@ -138,15 +150,16 @@ class Recommender:
 
             else:
                 book_candidate = self.functions.getBookCandidate(user)
+                # book_candidate = self.book_rate_user.keys()
+
                 if enable_print:
                     print("Book Candidate: ", len(book_candidate))
 
                 dict_book_predict = {}
                 for book in tqdm(book_candidate):
-                    if self.book_rate_user.__contains__(book):
-                        p = self.predict_rate(user, book, enable_print=False)
-                        if p is not None:
-                            dict_book_predict[book] = p
+                    p = self.predict_rate(user, book, enable_print=False)
+                    if p is not None:
+                        dict_book_predict[book] = p
 
                 sorted_rate_predict = sorted(dict_book_predict.items(), key=lambda x: x[1], reverse=True)
                 d_sorted_by_value = collections.OrderedDict(sorted_rate_predict)
@@ -166,12 +179,18 @@ class Recommender:
 
     def get_mae(self, test_set):
         cnt = 0
+        cnt_pred = 0
         mae = 0
         mse = 0
+
         for row in tqdm(test_set):
+            if int(row[2]) == 0:
+                continue
+
+            cnt += 1
             pred = self.predict_rate(row[0], row[1], enable_print=False)
             if pred is not None:
-                cnt += 1
+                cnt_pred += 1
                 delta = int(row[2]) - pred
                 if delta < 0:
                     delta = -delta
@@ -180,7 +199,7 @@ class Recommender:
 
         mae = mae / cnt
         rmse = math.sqrt(mse / cnt)
-        return mae, rmse, cnt / len(test_set)
+        return mae, rmse, cnt_pred / cnt
 
     def get_score(self, test_set, mode='rankscore'):
         ground_truth = {row[0]: [] for row in test_set}

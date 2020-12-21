@@ -1,24 +1,41 @@
 import logging
 import sys
 import asyncio
+import argparse
+
 from aiohttp import web
 from zmq.asyncio import ZMQEventLoop
+
 from router_handler import RouterHandler
+from config import *
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
+data_paths = {'BX': BX_path, 'GB': GB_path}
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Recommendation System')
+
+    parser.add_argument(
+        '-d', '--data',
+        help='Dataset to run system',
+        default='BX'
+    )
+
+    return parser.parse_args()
+
 
 def start_server(host, port):
+    args = parse_args()
     _loop = asyncio.get_event_loop()
     app = web.Application(loop=_loop, client_max_size=20*1024**2)
 
-    app['aes_key'] = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-    app['private_key'] = '0xab0880a6a9b593b6b4dfb23b842716f5777ff8656df940f137b00cc3ed76be2d'
-
-    handler = RouterHandler(_loop)
+    data_path = data_paths[args.data]
+    handler = RouterHandler(_loop, data_path)
 
     app.router.add_get('/train', handler.train)
     app.router.add_post('/evaluate', handler.evaluate)

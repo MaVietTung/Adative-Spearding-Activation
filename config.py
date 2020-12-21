@@ -10,3 +10,5 @@ GB_similarities = os.path.join(GB_path, 'data_matrix_similarities')
 
 epochs = 2
 n_preds = 10
+# threshold = 0.3
+# cnt_threshold = 2
