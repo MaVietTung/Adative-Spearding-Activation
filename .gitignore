@@ -2,8 +2,10 @@
 **/.idea/
 
 data/BX/data_matrix_similarities/
-data/BX/ratings.csv
+data/BX/train.csv
+data/BX/test.csv
 
 data/GB/data_matrix_similarities/
-data/GB/ratings.csv
+data/GB/train.csv
+data/GB/test.csv
 data/GB/ratings_origin.csv

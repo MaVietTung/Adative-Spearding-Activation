@@ -1,4 +1,5 @@
 import collections
+import math
 
 
 class Function:
@@ -7,6 +8,7 @@ class Function:
         self.book_rate_user = book_rate_user
         self.book_user_rate = book_user_rate
         self.matrix_similarities = matrix_similarities
+        self.high_rate_books = self.getHighRateBook()
 
     def getSimilaritiesValue(self, user1, user2):
         if user1 == user2:
@@ -38,8 +40,8 @@ class Function:
         for book in self.user_book_rating[user].keys():
             if self.book_rate_user.__contains__(book):
                 for rate in self.book_rate_user[book].keys():
-                    if rate != '0':
-                        user_similarities = user_similarities + self.book_rate_user[book][rate]
+                    # if rate != '0':
+                    user_similarities = user_similarities + self.book_rate_user[book][rate]
 
         if user_similarities.__contains__(user):
             user_similarities.remove(user)
@@ -57,17 +59,31 @@ class Function:
         return book_candidate
 
     def getHighRateBook(self):
-        rating = 0
-        total = 0
         dictionary = {}
-        for book in self.book_rate_user:
-            for rate in self.book_rate_user[book]:
-                if rate != '0':
-                    rating += int(rate) * len(list(self.book_rate_user[book][rate]))
-                    total += len(list(self.book_rate_user[book][rate]))
-                    dictionary[book] = rating / total
+        for book in self.book_user_rate:
+            # for rate in self.book_rate_user[book]:
+            #     if rate != '0':
+            #         rating += int(rate) * len(list(self.book_rate_user[book][rate]))
+            #         total += len(list(self.book_rate_user[book][rate]))
+            #         dictionary[book] = rating / total
+
+            rating = 0
+            total = 0
+            num = 0
+            for user in self.book_user_rate[book]:
+                rate = int(self.book_user_rate[book][user])
+                if rate != 0:
+                    total += 1
+                    rating += rate
+                num += 1
+
+            if total == 0:
+                total += 1
+            if num == 0:
+                num += 1
+            dictionary[book] = (math.log(num) + rating / total) / 2
         d_sorted_by_value = collections.OrderedDict(sorted(dictionary.items(), key=lambda x: x[1], reverse=True))
-        lst = list(d_sorted_by_value.keys())
+        lst = list(d_sorted_by_value.items())
         if len(lst) >= 20:
             return lst[0:20]
         else:

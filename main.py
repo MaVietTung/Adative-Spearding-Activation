@@ -14,8 +14,6 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(m
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
-data_paths = {'BX': BX_path, 'GB': GB_path}
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Recommendation System')
@@ -34,11 +32,12 @@ def start_server(host, port):
     _loop = asyncio.get_event_loop()
     app = web.Application(loop=_loop, client_max_size=20*1024**2)
 
-    data_path = data_paths[args.data]
-    handler = RouterHandler(_loop, data_path)
+    # data_path = data_paths[args.data]
+    handler = RouterHandler(_loop, args.data)
 
     app.router.add_get('/train', handler.train)
     app.router.add_post('/evaluate', handler.evaluate)
+    app.router.add_get('/eval_error', handler.evaluate_error)
     app.router.add_post('/recommend', handler.recommend)
     app.router.add_post('/predict', handler.predict)
     app.router.add_get('/prepare', handler.prepare)

@@ -1,17 +1,18 @@
 import os
 import math
 import json
+import random
 import collections
 
 from tqdm import notebook, tqdm
 
 from utils.functions import Function
-from utils.utils import f1_score, rankscore, avg_precision
+from utils.utils import precision_recall, f1_score, rankscore, avg_precision
 from config import *
 
 
 class Recommender:
-    def __init__(self, path, is_trained=True):
+    def __init__(self, path, rate_max, is_trained=True):
         with open(os.path.join(path, 'user_book_rating.json')) as fin:
             self.user_book_rating = json.load(fin)
 
@@ -32,6 +33,7 @@ class Recommender:
 
         self.epochs = epochs
         self.n_preds = n_preds
+        self.rate_max = rate_max
 
     def RMS(self, item_i, rating_x, rating_y):
         R_x_i = self.book_rate_user[item_i][rating_x]
@@ -129,10 +131,12 @@ class Recommender:
 
                 if K != 0 and cnt > cnt_threshold:
                     predict = medium_rating_user + 1 / K * S
-                    if predict > 10:
-                        predict = 10
+                    if predict > self.rate_max:
+                        predict = self.rate_max
+                    elif predict < 1:
+                        predict = 1
         elif enable_print:
-            print("User is incorrect. Please Enter another user ID. ")
+            print("User has too few ratings to predict. ")
 
         return predict
 
@@ -143,41 +147,86 @@ class Recommender:
             medium_rating = self.functions.getMediumRating(user)
             # print("User avg rating: ", medium_rating)
 
-            if medium_rating == 0:
-                if enable_print:
-                    print("User does not have any explicit ratings.")
-                book_recommendation = self.functions.getHighRateBook()
+            # if medium_rating == 0:
+            #     if enable_print:
+            #         print("User does not have any explicit ratings.")
+            #     book_recommendation = self.functions.getHighRateBook()
+            #
+            # else:
 
-            else:
-                book_candidate = self.functions.getBookCandidate(user)
-                # book_candidate = self.book_rate_user.keys()
+            book_candidate = self.functions.getBookCandidate(user)
+            # book_candidate = self.book_rate_user.keys()
 
-                if enable_print:
-                    print("Book Candidate: ", len(book_candidate))
+            if enable_print:
+                print("Book Candidate: ", len(book_candidate))
 
                 dict_book_predict = {}
                 for book in tqdm(book_candidate):
                     p = self.predict_rate(user, book, enable_print=False)
                     if p is not None:
                         dict_book_predict[book] = p
+            else:
+                dict_book_predict = {}
+                for book in book_candidate:
+                    p = self.predict_rate(user, book, enable_print=False)
+                    if p is not None:
+                        dict_book_predict[book] = p
 
-                sorted_rate_predict = sorted(dict_book_predict.items(), key=lambda x: x[1], reverse=True)
-                d_sorted_by_value = collections.OrderedDict(sorted_rate_predict)
+            sorted_rate_predict = sorted(dict_book_predict.items(), key=lambda x: x[1], reverse=True)
+            d_sorted_by_value = collections.OrderedDict(sorted_rate_predict)
 
-                lst = list(d_sorted_by_value.items())
-                if len(lst) >= n_pred:
-                    book_recommendation = lst[0:n_pred]
-                    # for book, rate in book_recommendation:
-                    #     print("{book}: {avg}".format(book=book, avg=functions.getMediumRatingBook(book)))
-                else:
-                    book_recommendation = lst
+            lst = list(d_sorted_by_value.items())
+            if len(lst) >= n_pred:
+                book_recommendation = lst[0:n_pred]
+                # for book, rate in book_recommendation:
+                #     print("{book}: {avg}".format(book=book, avg=functions.getMediumRatingBook(book)))
+            else:
+                high_rate_books = self.functions.high_rate_books[len(lst):n_pred]
+                book_recommendation = lst + high_rate_books
 
         elif enable_print:
-            print("User is incorrect. Please Enter another user ID. ")
+            print("User has too few ratings to recommend. ")
 
         return book_recommendation
 
-    def get_mae(self, test_set):
+    def evaluation(self, test_set, n_samples=20):
+        user_rates = {row[0]: [] for row in test_set}
+        for row in test_set:
+            user = row[0]
+            if user not in self.user_book_rating:
+                continue
+            user_rates[user].append(row[1])
+
+        random.seed(12)
+        sub_users = random.sample(user_rates.keys(), k=n_samples)
+
+        f1, ranks, ap = 0, 0, 0
+        precision, recall = 0, 0
+        for user in tqdm(sub_users):
+            # print("User: ", user)
+            labels = user_rates[user]
+            preds = self.prediction(user, n_pred=10, enable_print=False)
+            preds = [book for book, _ in preds]
+
+            pre, rec = precision_recall(labels, preds)
+            precision += pre
+            recall += rec
+            if (pre + rec) != 0:
+                f1 += 2 * rec * pre / (rec + pre)
+
+            ranks += rankscore(labels, preds)
+            # ap += avg_precision(labels, preds)
+
+        avg_pre = precision / n_samples
+        avg_rec = recall / n_samples
+        avg_f1 = f1 / n_samples
+        avg_ranks = ranks / n_samples
+        # ap = ap / n_samples
+
+        return avg_pre, avg_rec, avg_f1, avg_ranks
+
+
+    def get_error(self, test_set):
         cnt = 0
         cnt_pred = 0
         mae = 0
@@ -200,42 +249,3 @@ class Recommender:
         mae = mae / cnt
         rmse = math.sqrt(mse / cnt)
         return mae, rmse, cnt_pred / cnt
-
-    def get_score(self, test_set, mode='rankscore'):
-        ground_truth = {row[0]: [] for row in test_set}
-        for row in test_set:
-            user = row[0]
-            ground_truth[user].append([row[1], int(row[2])])
-
-        f1, ranks, ap = 0, 0, 0
-        for user in tqdm(ground_truth):
-            # ground_truth[user].sort(key=lambda x: x[1])
-            labels = [book for book, _ in ground_truth[user]]
-
-            preds = self.prediction(user, n_pred=10, enable_print=False)
-            preds = [book for book, _ in preds]
-
-            if mode == 'f1_score':
-                f1 += f1_score(labels, preds)
-            elif mode == 'rankscore':
-                ranks += rankscore(labels, preds)
-            elif mode == 'avg_precision':
-                ap += avg_precision(labels, preds)
-            else:
-                f1 += f1_score(labels, preds)
-                ranks += rankscore(labels, preds)
-                ap += avg_precision(labels, preds)
-
-        if mode == 'f1_score':
-            return f1 / len(ground_truth)
-
-        elif mode == 'rankscore':
-            return ranks / len(ground_truth)
-        elif mode == 'avg_precision':
-            return ap / len(ground_truth)
-
-        f1 = f1 / len(ground_truth)
-        ranks = ranks / len(ground_truth)
-        ap = ap / len(ground_truth)
-
-        return f1, ranks, ap

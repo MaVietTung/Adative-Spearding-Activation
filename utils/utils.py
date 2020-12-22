@@ -6,7 +6,7 @@ def precision_recall(labels, preds):
             tp += 1
 
     if tp == 0:
-        return 0
+        return 0, 0
 
     recall = tp / len(labels)
     precision = tp / len(preds)

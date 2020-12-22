@@ -10,6 +10,8 @@ from config import *
 
 def split_train_test(data, out_dir, test_size=0.2):
     train_set, test_set = train_test_split(data, test_size=test_size)
+    check = test_set.iloc[:, 0].isin(train_set.iloc[:, 0])
+    test_set = test_set[check]
 
     train_path = os.path.join(out_dir, 'train.csv')
     train_set.to_csv(train_path, sep=';', index=False, header=False)
