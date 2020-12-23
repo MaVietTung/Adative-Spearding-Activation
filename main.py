@@ -40,7 +40,6 @@ def start_server(host, port):
     app.router.add_get('/eval_error', handler.evaluate_error)
     app.router.add_post('/recommend', handler.recommend)
     app.router.add_post('/predict', handler.predict)
-    app.router.add_get('/prepare', handler.prepare)
 
     LOGGER.info('Starting Server on %s:%s', host, port)
     web.run_app(

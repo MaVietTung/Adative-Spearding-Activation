@@ -7,7 +7,6 @@ from json.decoder import JSONDecodeError
 
 from utils.errors import ApiBadRequest
 from recommend import Recommender
-from prepare_data import prepare_data
 from config import *
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
@@ -21,7 +20,8 @@ class RouterHandler(object):
         self.path = data_paths[data][0]
         self.rate_max = data_paths[data][1]
         similarities_path = os.path.join(self.path, 'data_matrix_similarities')
-        self.recommender = Recommender(similarities_path, rate_max=self.rate_max)
+        dataset = 1 if data == 'BX' else 2
+        self.recommender = Recommender(similarities_path, rate_max=self.rate_max, dataset=dataset)
 
     async def train(self, request):
         start = datetime.now()
@@ -146,22 +146,22 @@ class RouterHandler(object):
             "time": time.total_seconds()
         })
 
-    async def prepare(self, request):
-        try:
-            # ratings = pd.read_csv(os.path.join(self.path, 'ratings.csv'), sep=';')
-            # split_train_test(ratings, self.path)
-
-            train_path = os.path.join(self.path, 'train.csv')
-            prepare_data(train_path)
-
-            return json_response({
-                "status": 'Success'
-            })
-        except Exception as err:
-            logging.exception(err)
-            return json_response({
-                "status": "Fail"
-            })
+    # async def prepare(self, request):
+    #     try:
+    #         # ratings = pd.read_csv(os.path.join(self.path, 'ratings.csv'), sep=';')
+    #         # split_train_test(ratings, self.path)
+    #
+    #         train_path = os.path.join(self.path, 'train.csv')
+    #         prepare_data(train_path)
+    #
+    #         return json_response({
+    #             "status": 'Success'
+    #         })
+    #     except Exception as err:
+    #         logging.exception(err)
+    #         return json_response({
+    #             "status": "Fail"
+    #         })
 
 
 async def decode_request(request):

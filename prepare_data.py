@@ -1,6 +1,7 @@
 import csv
 import json
 import random
+from pathlib import Path
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -9,7 +10,7 @@ from config import *
 
 
 def split_train_test(data, out_dir, test_size=0.2):
-    train_set, test_set = train_test_split(data, test_size=test_size)
+    train_set, test_set = train_test_split(data, test_size=test_size, random_state=12)
     check = test_set.iloc[:, 0].isin(train_set.iloc[:, 0])
     test_set = test_set[check]
 
@@ -67,6 +68,7 @@ def prepare_data(data_path):
                     similarities_matrix[x][z] = random.random()
     
     similarities_path = os.path.join(os.path.dirname(data_path), 'data_matrix_similarities')
+    Path(similarities_path).mkdir(parents=True, exist_ok=True)
     with open(os.path.join(similarities_path, 'progress.txt'), 'w') as out_progress:
         out_progress.write('0\n')
         out_progress.write('0\n')
@@ -84,10 +86,11 @@ def prepare_data(data_path):
         json.dump(user_book_with_no_rating_0, out_data)
 
 
-# paths = [BX_path, GB_path]
-# for path in paths:
-#     ratings = pd.read_csv(os.path.join(path, 'ratings.csv'), sep=';')
-#     split_train_test(ratings, path)
-#
-#     train_path = os.path.join(path, 'train.csv')
-#     prepare_data(train_path)
+if __name__ == '__main__':
+    paths = [BX_path, GB_path]
+    for path in paths:
+        ratings = pd.read_csv(os.path.join(path, 'ratings.csv'), sep=';')
+        split_train_test(ratings, path)
+
+        train = os.path.join(path, 'train.csv')
+        prepare_data(train)

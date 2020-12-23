@@ -1,18 +1,17 @@
-import os
 import math
 import json
 import random
 import collections
 
-from tqdm import notebook, tqdm
+from tqdm import tqdm
 
 from utils.functions import Function
-from utils.utils import precision_recall, f1_score, rankscore, avg_precision
+from utils.utils import precision_recall, rankscore
 from config import *
 
 
 class Recommender:
-    def __init__(self, path, rate_max, is_trained=True):
+    def __init__(self, path, rate_max, is_trained=True, dataset=1):
         with open(os.path.join(path, 'user_book_rating.json')) as fin:
             self.user_book_rating = json.load(fin)
 
@@ -29,7 +28,7 @@ class Recommender:
             with open(os.path.join(path, 'matrix_similarities.json')) as fin:
                 self.matrix_similarities = json.load(fin)
 
-        self.functions = Function(self.user_book_rating, self.book_rate_user, self.matrix_similarities, self.book_user_rate)
+        self.functions = Function(self.user_book_rating, self.book_rate_user, self.matrix_similarities, self.book_user_rate, dataset=dataset)
 
         self.epochs = epochs
         self.n_preds = n_preds
@@ -97,7 +96,7 @@ class Recommender:
                         if t != 0:
                             self.matrix_similarities[active_user][user_i] = t
 
-        with open('data_matrix_similarities/result_train_similarities.json', 'w') as fout:
+        with open('data_matrix_similarities/result_train_similarity.json', 'w') as fout:
             json.dump(self.matrix_similarities, fout)
 
     def predict_rate(self, user, book, enable_print=True, threshold=0.3, cnt_threshold=2):

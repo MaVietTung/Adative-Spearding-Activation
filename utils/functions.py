@@ -3,12 +3,12 @@ import math
 
 
 class Function:
-    def __init__(self, user_book_rating, book_rate_user, matrix_similarities, book_user_rate):
+    def __init__(self, user_book_rating, book_rate_user, matrix_similarities, book_user_rate, dataset=1):
         self.user_book_rating = user_book_rating
         self.book_rate_user = book_rate_user
         self.book_user_rate = book_user_rate
         self.matrix_similarities = matrix_similarities
-        self.high_rate_books = self.getHighRateBook()
+        self.high_rate_books = self.getHighRateBook(dataset)
 
     def getSimilaritiesValue(self, user1, user2):
         if user1 == user2:
@@ -58,7 +58,7 @@ class Function:
 
         return book_candidate
 
-    def getHighRateBook(self):
+    def getHighRateBook(self, dataset=1):
         dictionary = {}
         for book in self.book_user_rate:
             # for rate in self.book_rate_user[book]:
@@ -81,7 +81,7 @@ class Function:
                 total += 1
             if num == 0:
                 num += 1
-            dictionary[book] = (math.log(num) + rating / total) / 2
+            dictionary[book] = ((math.log(num) / dataset) + (rating / total)) / 2
         d_sorted_by_value = collections.OrderedDict(sorted(dictionary.items(), key=lambda x: x[1], reverse=True))
         lst = list(d_sorted_by_value.items())
         if len(lst) >= 20:
